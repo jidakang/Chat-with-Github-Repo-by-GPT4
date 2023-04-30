@@ -26,6 +26,8 @@ from langchain.agents import create_csv_agent
 load_dotenv()
 # Set the title for the Streamlit app
 st.title(os.environ.get('SITE_TITLE'))
+model_options = ["gpt-3.5-turbo", "gpt-4"]
+selected_model = st.selectbox("Select a model:", model_options)
 # Set the OpenAI API key from the environment variable
 openai.api_key = os.environ.get('OPENAI_API_KEY')
 active_loop_data_set_path = os.environ.get('DEEPLAKE_DATASET_PATH')
@@ -38,10 +40,10 @@ db = DeepLake(dataset_path=active_loop_data_set_path,
               read_only=True, embedding_function=embeddings)
 
 
-def generate_response(prompt):
+def generate_response(prompt, selected_model):
     # Generate a response using OpenAI's ChatCompletion API and the specified prompt
     completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model=selected_model, # Replace "gpt-3.5-turbo" with the user's selection
         messages=[
             {"role": "user", "content": prompt}
         ])
@@ -68,7 +70,7 @@ def search_db(query):
     # Create a RetrievalQA instance from the model and retriever
     qa = RetrievalQA.from_llm(model, retriever=retriever)
     # Return the result of the query
-    return qa.run(query)
+    return qa.run(query, selected_model)
 
 
 # Initialize the session state for generated responses and past inputs
@@ -83,7 +85,7 @@ user_input = get_text()
 
 # If there is user input, search for a response using the search_db function
 if user_input:
-    output = search_db(user_input)
+    output = search_db(user_input, selected_model)
     st.session_state.past.append(user_input)
     st.session_state.generated.append(output)
 
